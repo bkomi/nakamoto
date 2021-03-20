@@ -89,7 +89,44 @@ def respond(
     Returns:
         Nothing
     '''
-    # TODO: Your code here!
+
+    update_last_heard_from(msg_forwarder)
+
+    msg = (msg_type, msg_id, msg_forwarder, msg_originator, ttl, data)
+
+    if msg in RECEIVED_MESSAGES:
+        return
+
+    RECEIVED_MESSAGES.add(msg)
+    
+    if msg_type == PING:
+
+        pong = {
+            "msg_type": PONG,
+            "ttl": 0,
+            "data": None
+        }
+        send_message_to(peer=msg_forwarder, message=pong, forwarded=False)
+
+    elif msg_type == PRIME:
+
+        if data!=None and data > STATE["biggest_prime"]:
+            STATE["biggest_prime"] = data
+            STATE["biggest_prime_sender"] = msg_originator
+
+            STATE["peers"][msg_originator] = time.time()
+
+        if ttl > 0:
+            forward_prime_msg = {
+                "msg_type": PRIME,
+                "ttl": ttl-1,
+                "data": data,
+                "msg_originator": msg_originator
+            }
+            for peer in [*STATE["peers"]]:
+                if peer != msg_forwarder and peer != msg_originator:
+                    send_message_to(peer=peer, message=forward_prime_msg, forwarded=True)
+
     pass
 
 
@@ -165,6 +202,8 @@ def receive():
     data = req_data["data"]
 
     try:
+        # log_message(message={"DEBUG RECEIVE" : f"{msg_type}, {msg_id}, {msg_forwarder}, {msg_originator}, {ttl}, {data}"}, received=True)
+
         respond(msg_type, msg_id, msg_forwarder, msg_originator, ttl, data)
     except Exception as e:
         log_error(e)
