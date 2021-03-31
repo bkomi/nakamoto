@@ -114,7 +114,7 @@ def respond(
             STATE["biggest_prime"] = data
             STATE["biggest_prime_sender"] = msg_originator
 
-            STATE["peers"][msg_originator] = time.time()
+        STATE["peers"][msg_originator] = time.time()
 
         if ttl > 0:
             forward_prime_msg = {
